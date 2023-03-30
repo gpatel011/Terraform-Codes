@@ -1,0 +1,198 @@
+/*
+Pre-requisite - Create a EC2 Key Pair
+Create EC2 Key pair terraform-key and download pem file and put ready for SSH login
+In AWS console-
+Go to Network and security-click on create a key pair-give name as "terraform key"-select format as .pem-click on create.
+*/
+-----------------------------------------------------------------------------------------------------------------------------------------------
+#Example 1-Resource Meta_Arguments-Create VPC Resources
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4" 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region = "us-east-1"
+  profile = "default"
+}
+
+#Resource block
+
+/*Create VPC using Terraform
+Create VPC Resources listed below
+Create VPC
+Create Subnet
+Create Internet Gateway
+Create Route Table
+Create Route in Route Table for Internet Access
+Associate Route Table with Subnet
+Create Security Group in the VPC with port 80, 22 as inbound open
+*/
+
+# Resource-1: Create VPC
+# Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc
+resource "aws_vpc" "vpc-dev" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    "name" = "vpc-dev"
+  }
+}
+
+# Resource-2: Create Subnets
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet
+resource "aws_subnet" "vpc-dev-public-subnet-1" {
+  vpc_id = aws_vpc.vpc-dev.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+  map_public_ip_on_launch = true
+}
+
+
+# Resource-3: Internet Gateway
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway
+resource "aws_internet_gateway" "vpc-dev-igw" {
+  vpc_id = aws_vpc.vpc-dev.id
+}
+
+# Resource-4: Create Route Table
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table
+resource "aws_route_table" "vpc-dev-public-route-table" {
+  vpc_id = aws_vpc.vpc-dev.id
+}
+
+# Resource-5: Create Route in Route Table for Internet Access
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route
+resource "aws_route" "vpc-dev-public-route" {
+  route_table_id = aws_route_table.vpc-dev-public-route-table.id 
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = aws_internet_gateway.vpc-dev-igw.id 
+}
+
+
+# Resource-6: Associate the Route Table with the Subnet
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association
+resource "aws_route_table_association" "vpc-dev-public-route-table-associate" {
+  route_table_id = aws_route_table.vpc-dev-public-route-table.id 
+  subnet_id = aws_subnet.vpc-dev-public-subnet-1.id
+}
+
+# Resource-7: Create Security Group
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group
+resource "aws_security_group" "dev-vpc-sg" {
+  name = "dev-vpc-default-sg"
+  vpc_id = aws_vpc.vpc-dev.id
+  description = "Dev VPC Default Security Group"
+
+  ingress {
+    description = "Allow Port 22"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow Port 80"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow all ip and ports outboun"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+}
+
+# Now create EC2 instance in the above VPC
+# Resource-8: Create EC2 Instance
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
+resource "aws_instance" "my-ec2-vm" {
+  ami = "ami-0be2609ba883822ec" # Amazon Linux
+  instance_type = "t2.micro"
+  subnet_id = aws_subnet.vpc-dev-public-subnet-1.id    ........#Subnet_id=value(Resource type.local name.id)
+  key_name = "terraform-key"
+  
+  #Now here we have to give scipt to test.Here are 2 options-1st is provide file path and 2nd is directly write file here.
+  
+  #1st Method-
+	#user_data = file("apache-install.sh")
+  #Link-https://developer.hashicorp.com/terraform/language/functions/file
+  
+  #2nd Method
+  user_data = <<-EOF
+    #!/bin/bash
+    sudo yum update -y
+    sudo yum install httpd -y
+    sudo systemctl enable httpd
+    sudo systemctl start httpd
+    echo "<h1>Welcome to StackSimplify ! AWS Infra created using Terraform in us-east-1 Region</h1>" > /var/www/html/index.html
+    EOF  
+  vpc_security_group_ids = [ aws_security_group.dev-vpc-sg.id ]   ..............#value=(Resource type.local name.id)
+}
+
+# Resource-9: Create Elastic IP
+#Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip
+resource "aws_eip" "my-eip" {
+  instance = aws_instance.my-ec2-vm.id
+  vpc = true
+  
+  #Add a Resource Meta-Argument depends_on ensuring Elastic IP gets created only after AWS Internet Gateway in a VPC is present or created
+  #Link-https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip
+  
+  depends_on = [ aws_internet_gateway.vpc-dev-igw ]   .........#value=Resource type.local value
+}
+
+/*
+# Now Run the below command-
+
+# Initialize Terraform
+terraform init
+
+# Terraform Validate
+terraform validate
+
+# Terraform Plan to Verify what it is going to create / update / destroy
+terraform plan
+
+# Terraform Apply to Create EC2 Instance
+terraform apply 
+
+# Verify the Resources on AWS console
+Verify VPC
+Verify EC2 Instance
+Verify Elastic IP
+
+#Review the terraform.tfstate file in local working directory
+
+# Access Application
+Access Apache Webserver Static page using Elastic IP
+http://<AWS-ELASTIC-IP(public ip)>
+
+#Login by ssh
+ls /path of the file/file name(terraform-key.pem)
+chmod 400 /path of the file/file name(terraform-key.pem) .......Now give permission to the key file which we have created at the begining
+ssh -i /path of the file/file name(terraform-key.pem) ec2-user@Elastic-ip i.e public ip
+ps-ef | grep httpd ..........lo in inside ec2 instance
+
+# Destroy Terraform Resources
+terraform destroy
+
+# Remove Terraform Files
+rm -rf .terraform*
+rm -rf terraform.tfstate*
+*/

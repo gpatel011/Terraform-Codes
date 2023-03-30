@@ -5,7 +5,7 @@ In AWS console-
 Go to Network and security-click on create a key pair-give name as "terraform key"-select format as .pem-click on create.
 */
 -----------------------------------------------------------------------------------------------------------------------------------------------
-#Example 1-Resource Meta_Arguments-Create VPC Resources
+#Example 1-Resource Meta_Arguments-
 
 # Terraform Block
 terraform {
@@ -196,3 +196,112 @@ terraform destroy
 rm -rf .terraform*
 rm -rf terraform.tfstate*
 */
+
+====================================================================================================================================================
+#Example 2-Resource Meta_Arguments-Count-Create 5 EC2 Instances using Terraform
+
+#Link-https://developer.hashicorp.com/terraform/language/meta-arguments/count
+/*In general, 1 EC2 Instance Resource in Terraform equals to 1 EC2 Instance in Real AWS Cloud
+5 EC2 Instance Resources = 5 EC2 Instances in AWS Cloud
+With Meta-Argument count this is going to become super simple.
+*/
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4" 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region  = "us-east-1"
+  profile = "default"
+}
+
+# Resource Block
+# Create EC2 Instance
+resource "aws_instance" "web" {
+  ami = "ami-047a51fa27710816e" # Amazon Linux
+  instance_type = "t2.micro"
+  count = 5
+  tags = {
+    "Name" = "web"
+  }
+}
+#
+Execute Terraform Commands
+# Initialize Terraform
+terraform init
+
+# Terraform Validate
+terraform validate
+
+# Terraform Plan to Verify what it is going to create / update / destroy
+terraform plan
+
+# Terraform Apply to Create EC2 Instance
+terraform apply 
+Verify EC2 Instances and its Name
+---------------
+/*
+Understand about count index
+If we currently see all our EC2 Instances has the same name web
+Lets name them by using count index web-0, web-1, web-2, web-3, web-4
+*/
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4" 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region  = "us-east-1"
+  profile = "default"
+}
+
+#Resource Block
+# Create EC2 Instance
+resource "aws_instance" "web" {
+  ami = "ami-047a51fa27710816e" # Amazon Linux
+  instance_type = "t2.micro"
+  count = 5
+  tags = {
+    #"Name" = "web"
+    "Name" = "web-${count.index}"
+  }
+}
+#Execute Terraform Commands
+# Terraform Validate
+terraform validate
+
+# Terraform Plan to Verify what it is going to create / update / destroy
+terraform plan
+
+# Terraform Apply to Create EC2 Instance
+terraform apply 
+Verify EC2 Instances
+
+
+# Destroy Terraform Resources
+terraform destroy
+# Remove Terraform Files
+rm -rf .terraform*
+rm -rf terraform.tfstate*
+
+===================================================================================================================================================
+#Example 3-Resource Meta_Arguments-
+===================================================================================================================================================
+#Example 4-Resource Meta_Arguments-
+===================================================================================================================================================

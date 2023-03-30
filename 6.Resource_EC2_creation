@@ -1,4 +1,5 @@
-#Example 1-Behaviour-Create resource-EC2
+#Example 1-Resource_Behaviour-Create resource-EC2
+
 # Terraform Block
 terraform {
   required_version = ">= 1.4"
@@ -14,21 +15,22 @@ terraform {
 provider "aws" {
   region  = "us-east-1"
 }
-# Create EC2 Instance
+
+# Resource Block
+#Create EC2 Instance
 #Refer link for below syntax- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 
 resource "aws_instance" "my-ec2-vm" {
   ami               = "ami-047a51fa27710816e"
   instance_type     = "t2.micro"
   availability_zone = "us-east-1a"
-  #availability_zone = "us-east-1b"
   tags = {
-    "Name" = "web"
-    #"tag1" = "Update-test-1"    
+    "Name" = "web" 
   }
 }
 
 /*Run the below commands-
+
 # Initialize Terraform
 terraform init
 
@@ -51,7 +53,8 @@ Observations: It slightly changes the terraform configuration file as per the te
 # Review the terraform plan
 terraform plan 
 Observation-1: Nothing happens during the first run from terraform state perspective
-Observation-2: From Resource Behavior perspective you can see "+ create", in the output.
+Observation-2: In the Resource action line you can see "+ create", in the output.
+
 # Create Resources 
 terraform apply -auto-approve
 Observation: 
@@ -60,4 +63,112 @@ Observation:
 */
 ===============================================================================================================================================
 
-#Example 2-Behaviour-Create resource-EC2
+#Example 2-Resource_Behaviour: Update In-Place: Make changes by adding new tag to EC2 Instance
+#To check this just add a tag argument in the resource block and rest code will be the same.
+# Add this-"tag1" = "Update-test-1"
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region  = "us-east-1"
+}
+
+# Resource Block
+# Create EC2 Instance
+# Refer link for below syntax- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
+
+resource "aws_instance" "my-ec2-vm" {
+  ami               = "ami-047a51fa27710816e"
+  instance_type     = "t2.micro"
+  availability_zone = "us-east-1a"
+  tags = {
+    "Name" = "web"
+    "tag1" = "Update-test-1"    
+  }
+}
+
+/*Run the below commands-
+# Review the terraform plan
+terraform plan 
+Observation: In the Resource action line you should see "~ update in-place" 
+"Plan: 0 to add, 1 to change, 0 to destroy."
+
+# Create / Update Resources 
+terraform apply -auto-approve
+Observation: "Apply complete! Resources: 0 added, 1 changed, 0 destroyed."
+Then go on the AWS console and chekc in ec2 instance details there u will see the tag is updated.In previous code it was not there.
+*/
+===================================================================================================================================================
+
+#Example 3-Resource_Behaviour: Destroy and Re-create Resources: Update Availability Zone(Means comment old availability Zone
+and add new availability zone to -availability_zone = "us-east-1b")
+# It means here it will destroy the old Ec2 instance created tin the 1a zone and will create a new instance in 1b zone.
+# Before-availability_zone = "us-east-1a"
+# After-availability_zone = "us-east-1b"  
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region  = "us-east-1"
+}
+
+# Resource Block
+# Create EC2 Instance
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
+
+resource "aws_instance" "my-ec2-vm" {
+  ami               = "ami-047a51fa27710816e"
+  instance_type     = "t2.micro"
+  #availability_zone = "us-east-1a"
+  availability_zone = "us-east-1b"
+  tags = {
+    "Name" = "web"
+    "tag1" = "Update-test-1"    
+  }
+}
+
+
+/*Run the below commands-
+# Review the terraform plan
+terraform plan 
+Observation: 
+1) In the resource action you will see-/+ destroy and then create replacement
+2) # aws_instance.my-ec2-vm must be "replaced"
+3) # aws_instance.my-ec2-vm must be "replaced" - This parameter forces replacement
+4) "Plan: 1 to add, 0 to change, 1 to destroy."
+
+# Create / Update Resources 
+terraform apply -auto-approve
+Observation: "Apply complete! Resources: 1 added, 0 changed, 1 destroyed."
+
+# Now go to AWS console and check the same
+*/
+
+# Below we are doing to clean our local working directory so that we can do other labs
+#Step-11: Clean-Up
+# Destroy Resource
+terraform destroy -auto-approve 
+
+# Remove Terraform Files
+rm -rf .terraform*
+rm -rf terraform.tfstate*

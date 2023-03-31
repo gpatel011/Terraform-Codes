@@ -433,11 +433,11 @@ terraform destroy
 rm -rf .terraform*
 rm -rf terraform.tfstate*
 ===================================================================================================================================================
-#Example 4-Resource Meta_Arguments-lifecycle
-#https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle
+# ***********************************Resource Meta_Arguments-lifecycle******************************************#
+#Link-https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle
 
 
-#lifecyle - create_before_destroy
+#Type 1-------lifecyle - create_before_destroy-------------------------
 /*
 Default Behavior of a Resource: Destroy Resource & re-create Resource
 With Lifecycle Block we can change that using create_before_destroy=true
@@ -476,41 +476,32 @@ resource "aws_instance" "web" {
     create_before_destroy = true
   }
   
-#Observe without Lifecycle Block
+#####Observe without Lifecycle Block
 # Initialize Terraform
 terraform init
-
 # Validate Terraform Configuration Files
 terraform validate
-
 # Format Terraform Configuration Files
 terraform fmt
-
 # Generate Terraform Plan
 terraform plan
-
 # Create Resources
 terraform apply -auto-approve
-
 # Modify Resource Configuration-Change Availability Zone from us-east-1a to us-east-1b
-
 # Apply Changes
 terraform apply -auto-approve
-
 /*Observation: 
 1) First us-east-1a resource will be destroyed
 2) Second us-east-1b resource will get
---------------
-#With Lifecycle Block-Add Lifecycle block in the resource
+*/
+
+######With Lifecycle Block-Add Lifecycle block in the resource
 # Generate Terraform Plan
 terraform plan
-
 # Apply Changes
 terraform apply -auto-approve
-
 # Modify Resource Configuration
 Change Availability Zone from us-east-1b to us-east-1a
-
 # Apply Changes
 terraform apply -auto-approve
 Observation: 
@@ -522,38 +513,61 @@ Observation:
 terraform destroy -auto-approve
 rm -rf .terraform*
 rm -rf terraform.tfstate*
---------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 
-#lifecycle - prevent_destroy
-Step-03-01Introduction
+#Type 2-------lifecyle - prevent_destroy-------------------------
+
 This meta-argument, when set to true, will cause Terraform to reject with an error any plan that would destroy the infrastructure object associated with the resource, as long as the argument remains present in the configuration.
 This can be used as a measure of safety against the accidental replacement of objects that may be costly to reproduce, such as database instances
 However, it will make certain configuration changes impossible to apply, and will prevent the use of the terraform destroy command once such objects are created, and so this option should be used sparingly.
 Since this argument must be present in configuration for the protection to apply, note that this setting does not prevent the remote object from being destroyed if the resource block were removed from configuration entirely: in that case, the prevent_destroy setting is removed along with it, and so Terraform will allow the destroy operation to succeed.
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4" 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region  = "us-east-1"
+  profile = "default"
+}
+  
+# Resource Block
+# Create EC2 Instance
+resource "aws_instance" "web" {
+  ami = "ami-0915bcb5fa77e4892" # Amazon Linux
+  instance_type = "t2.micro"
+  tags = {
+    "Name" = "web-2"
+  }
   lifecycle {
     prevent_destroy = true # Default is false
   }
+}
+
 
 #Execute Terraform Commands
 # Initialize Terraform
 terraform init
-
 # Validate Terraform Configuration Files
 terraform validate
-
 # Format Terraform Configuration Files
 terraform fmt
-
 # Generate Terraform Plan
 terraform plan
-
 # Create Resources
 terraform apply -auto-approve
-
 # Destroy Resource
 terraform destroy 
-Observation: 
-Kalyans-MacBook-Pro:v2-prevent_destroy kdaida$ terraform destroy -auto-approve
+# Observation: 
+/*Kalyans-MacBook-Pro:v2-prevent_destroy kdaida$ terraform destroy -auto-approve
 Error: Instance cannot be destroyed
   on c2-ec2-instance.tf line 2:
    2: resource "aws_instance" "web" {
@@ -561,22 +575,50 @@ Resource aws_instance.web has lifecycle.prevent_destroy set, but the plan
 calls for this resource to be destroyed. To avoid this error and continue with
 the plan, either disable lifecycle.prevent_destroy or reduce the scope of the
 plan using the -target flag.
-
-
-# Remove/Comment Lifecycle block
-- Remove or Comment lifecycle block and clean-up
+*/
 
 # Destroy Resource after removing lifecycle block
 terraform destroy
-
-# Clean-Up
 rm -rf .terraform*
 rm -rf terraform.tfstate*
-----------------------------
+---------------------------------------------------------------------------------------------------------------
 
-#lifecyle - ignore_changes-Create an EC2 Changes, make manual changes and understand the behavior
+#Type 2-------lifecyle - ignore_changes-Create an EC2-------------------------
 
+# Terraform Block
+terraform {
+  required_version = ">= 1.4" 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
 
+# Provider Block
+provider "aws" {
+  region  = "us-east-1"
+  profile = "default"
+}
+
+# Resource Block
+# Create EC2 Instance
+resource "aws_instance" "web" {
+  ami = "ami-0915bcb5fa77e4892" # Amazon Linux
+  instance_type = "t2.micro"
+  tags = {
+    "Name" = "web-3"
+  }
+/*
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to tags, e.g. because a management agent
+      # updates these based on some ruleset managed elsewhere.
+      tags,
+    ]
+  }*/
+}
 
 
 # Initialize Terraform
@@ -633,6 +675,19 @@ terraform destroy -auto-approve
 # Clean-Up
 rm -rf .terraform*
 rm -rf terraform.tfstate*
+
+/*Important Note: 
+Instead of a list, the special keyword all maybe used to instruct Terraform to ignore all attributes, 
+which means that Terraform can create and destroy the remote object but will never propose updates to it.
+
+resource "aws_instance" "example" {
+  # ...
+ 
+  lifecycle {
+    ignore_changes = all
+  }
+}
+*/
 ===================================================================================================================================================
 #Example 5-Resource Meta_Arguments-provisioners and connections
 ===================================================================================================================================================

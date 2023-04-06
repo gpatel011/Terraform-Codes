@@ -1,0 +1,110 @@
+#How to define Provider Block
+# Terraform Block
+terraform {
+  required_version = ">= 1.4.1"
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region = "us-east-1"  
+  profile = "default" 
+}
+
+/*
+Note-1:  AWS Credentials Profile (profile = "default") configured on your local desktop terminal  
+$HOME/.aws/credentials
+
+Output--------
+# Initialize Terraform
+terraform init
+
+# Validate Terraform Configuration files
+terraform validate
+
+# Execute Terraform Plan
+terraform plan
+
+# Destroy Terraform Resources
+terraform destroy -auto-approve
+
+# Delete Terraform Files
+rm -rf .terraform*
+rm -rf terraform.tfstate*
+*/
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Example 2-How to define multiple provider configuration of same Provider?
+# Terraform Block
+terraform {
+  required_version = ">= 1.4.1"
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+  }
+}
+
+# Provider-1 for us-east-1 (Default Provider)
+provider "aws" {
+  region = "us-east-1"
+  profile = "default"
+}
+
+
+# Provider-2 for us-west-1
+provider "aws" {
+  region = "us-west-1"
+  profile = "default"
+  alias = "aws-west-1"
+}
+
+# Resource Block to Create VPC in us-east-1 which uses default provider
+resource "aws_vpc" "vpc-us-east-1" {
+  cidr_block = "10.1.0.0/16"
+  tags = {
+    "Name" = "vpc-us-east-1"
+  }
+}
+
+# Resource Block to Create VPC in us-west-1/How to reference the non-default provider configuration in a resource?
+resource "aws_vpc" "vpc-us-west-1" {
+  cidr_block = "10.2.0.0/16"
+  provider = aws.aws-west-1       #provider = <PROVIDER NAME>.<ALIAS>  # This is a Meta-Argument from Resources Section nothing but a Special Argument
+  tags = {
+    "Name" = "vpc-us-west-1"
+  }
+}
+
+/*
+Output--------
+# Initialize Terraform
+terraform init
+
+# Validate Terraform Configuration Files
+terraform validate
+
+# Generate Terraform Plan
+terraform plan
+
+# Create Resources
+terraform apply -auto-approve
+
+# Verify the same
+1. Verify the VPC created in us-east-1...default provider
+2. Verify the VPC created in us-west-2
+
+Clean-Up
+# Destroy Terraform Resources
+terraform destroy -auto-approve
+
+# Delete Terraform Files
+rm -rf .terraform*
+rm -rf terraform.tfstate*
+*/

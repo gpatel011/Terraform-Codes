@@ -1,34 +1,3 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Codespaces
-Marketplace
-Explore
- 
-@sonali-source 
-stacksimplify
-/
-hashicorp-certified-terraform-associate
-Public
-Fork your own copy of stacksimplify/hashicorp-certified-terraform-associate
-Code
-Issues
-2
-Pull requests
-3
-Actions
-Projects
-Security
-Insights
-hashicorp-certified-terraform-associate/02-Terraform-Basics/02-03-Terraform-Language-Syntax/terraform-manifests/top-level-blocks-samples.tf
-@stacksimplify
-stacksimplify Welcome to StackSimplify
-Latest commit 880f7ba 3 days ago
- History
- 1 contributor
-104 lines (94 sloc)  2.98 KB
-
 #####################################################################
 # Block-1: Terraform Settings Block
 terraform {

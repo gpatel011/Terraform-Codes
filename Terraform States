@@ -1,5 +1,4 @@
 #Example 1-Configure AWS S3 as Terraform Backend for Remote State Storage.
-#Example 2-Implement State locking using AWS DynamoDB.
 
 #In AWS Console-Create S3 Bucket
 Go to Services -> S3 -> Create Bucket
@@ -169,9 +168,9 @@ data "aws_ami" "amzlinux" {
   }
 }
 
+/*
+Output------------
 
-
-Step-04: Test with Remote State Storage Backend
 # Initialize Terraform
 terraform init
 
@@ -209,14 +208,17 @@ Observation: Finally at this point you should see the terraform.tfstate file in 
 
 # Access Application
 http://<Public-DNS>
-Step-05: Bucket Versioning - Test
-Update in c2-variables.tf
+
+#Bucket Versioning - Test
+#Update in variables.tf
+
 variable "instance_type" {
   description = "EC2 Instance Type - Instance Sizing"
   type = string
   #default = "t2.micro"
   default = "t2.small"
 }
+
 Execute Terraform Commands
 # Review the terraform plan
 terraform plan 
@@ -227,21 +229,24 @@ terraform apply -auto-approve
 # Verify S3 Bucket for terraform.tfstate file
 bucket-name/dev/terraform.tfstate
 Observation: New version of terraform.tfstate file will be created
-Step-06: Destroy Resources
-Destroy Resources and Verify Bucket Versioning
-# Destroy Resources
+
+#Destroy Resources
+#Destroy Resources and Verify Bucket Versioning
 terraform destroy -auto-approve
-Step-07: Terraform State Locking Introduction
-Understand about Terraform State Locking Advantages
-Step-08: Add State Locking Feature using DynamoDB Table
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Example 2-Implement State locking using AWS DynamoDB Table
+
+#In AWS console-
 Create Dynamo DB Table
 Table Name: terraform-dev-state-table
 Partition key (Primary Key): LockID (Type as String)
 Table settings: Use default settings (checked)
 Click on Create
-Step-09: Update DynamoDB Table entry in backend in c1-versions.tf
-Enable State Locking in c1-versions.tf
-  # Adding Backend as S3 for Remote State Storage with State Locking
+
+#Update DynamoDB Table entry in backend section of the file.
+# Adding Backend as S3 for Remote State Storage with State Locking
+
   backend "s3" {
     bucket = "terraform-stacksimplify"
     key    = "dev2/terraform.tfstate"
@@ -250,7 +255,10 @@ Enable State Locking in c1-versions.tf
     # For State Locking
     dynamodb_table = "terraform-dev-state-table"
   }
-Step-10: Execute Terraform Commands
+
+/*
+Output----
+Execute Terraform Commands
 # Initialize Terraform 
 terraform init
 
@@ -268,7 +276,8 @@ terraform apply -auto-approve
 # Verify S3 Bucket for terraform.tfstate file
 bucket-name/dev2/terraform.tfstate
 Observation: New version of terraform.tfstate file will be created in dev2 folder
-Step-11: Destroy Resources
+
+#Destroy Resources
 Destroy Resources and Verify Bucket Versioning
 # Destroy Resources
 terraform destroy -auto-approve

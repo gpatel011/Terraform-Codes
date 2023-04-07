@@ -244,7 +244,7 @@ Partition key (Primary Key): LockID (Type as String)
 Table settings: Use default settings (checked)
 Click on Create
 
-#Update DynamoDB Table entry in backend section of the file.
+#Update DynamoDB Table entry in backend section of the file. and rest file will be same.
 # Adding Backend as S3 for Remote State Storage with State Locking
 
   backend "s3" {

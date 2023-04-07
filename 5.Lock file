@@ -63,23 +63,30 @@ terraform plan
 # Create Resources using Terraform Apply
 terraform apply
 
-Review .terraform.lock.hcl
-Discuss about versions
-Compare .terraform.lock.hcl-ORIGINAL & .terraform.lock.hcl
-Backup .terraform.lock.hcl as .terraform.lock.hcl-FIRST-INIT
-# Backup
+#Here u will see bucket is created with the length 5.
+abc-fbc-lkj-okh-olp
+#Same verify it from aws console
+
+# How to take Backup of the file (MEans just copy crrent file to new file.
 cp .terraform.lock.hcl .terraform.lock.hcl-FIRST-INIT
-Step-04: Upgrade the AWS provider version
+
+# Compare both the lock file and obsever if there is any changes-
+diff.terraform.lock.hcl-ORIGINAL .terraform.lock.hcl
+
+#Upgrade the AWS provider version
 For AWS Provider, with version constraint version = ">= 2.0.0", it is going to upgrade to latest 3.x.x version with command terraform init -upgrade
 # Upgrade Provider Version
 terraform init -upgrade
-Review .terraform.lock.hcl
-Discuss about AWS Versions
-Compare .terraform.lock.hcl-FIRST-INIT & .terraform.lock.hcl
-Step-05: Apply Terraform configuration with latest AWS Provider
-Should fail due to S3 related latest changes came in AWS v3.x provider when compared to AWS v2.x provider
+
+#Review .terraform.lock.hcl.Here u will obsever the version changes in the new lock file.
+Compare the files-
+diff .terraform.lock.hcl-FIRST-INIT & .terraform.lock.hcl
+
+#Apply Terraform configuration with latest AWS Provider
 # Terraform Apply
 terraform apply
+observation-Should fail due to S3 related latest changes came in AWS v3.x provider when compared to AWS v2.x provider
+
 
 
 

@@ -1,0 +1,50 @@
+#Terraform Show
+
+#Update your backend block with your bucket name, key and region,Also update your dynamodb table name.Rest all blocks will be same as terraform State lab.
+# Terraform Block
+terraform {
+  required_version = "~> 0.14" # which means any version equal & above 0.14 like 0.15, 0.16 etc and < 1.xx
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+  }
+  # Adding Backend as S3 for Remote State Storage
+  backend "s3" {
+    bucket = "terraform-stacksimplify"
+    key    = "statecommands/terraform.tfstate"
+    region = "us-east-1" 
+
+    # Enable during Step-09     
+    # For State Locking
+    dynamodb_table = "terraform-dev-state-table"    
+    
+  }
+}
+
+Output----
+# Initialize Terraform
+terraform init
+
+# Create Plan 
+terraform plan -out=v1plan.out
+
+# Read the plan 
+terraform show v1plan.out
+
+# Read the plan in json format
+terraform show -json v1plan.out
+
+#Terraform Show command to Read State files
+By default, in the working directory if we have terraform.tfstate file, when we provide the command terraform show it will read the state file automatically and display output.
+# Terraform Show
+terraform show
+Observation: It should say "No State" because we will still didn't create any resources yet and no state file in current working directory
+
+# Create Resources
+terraform apply -auto-approve
+
+# Terraform Show 
+terraform show
+Observation: It should display the state file

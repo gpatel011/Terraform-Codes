@@ -87,6 +87,31 @@ diff .terraform.lock.hcl-FIRST-INIT & .terraform.lock.hcl
 terraform apply
 observation-Should fail due to S3 related latest changes came in AWS v3.x provider when compared to AWS v2.x provider
 
+#Comment region in S3 Resource and try Terraform Apply
+It should work.
+When we do a major version upgrade to providers, it might break few features.
+So with .terraform.lock.hcl, we can avoid this type of issues.
+
+# Comment Region Attribute
+# Resource Block: Create AWS S3 Bucket
+resource "aws_s3_bucket" "sample" {
+  bucket = random_pet.petname.id
+  acl    = "public-read"
+
+  #region = "us-west-2"
+}
+
+# Terraform Apply
+terraform apply
+
+#Clean-Up
+# Destroy Resources
+terraform destroy
+
+# Delete Terraform Files
+rm -rf .terraform    # We are not removing files named ".terraform.lock.hcl, .terraform.lock.hcl-ORIGINAL" which are needed for this demo for you.
+rm -rf terraform.tfstate*
+
 
 
 

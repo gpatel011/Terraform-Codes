@@ -28,12 +28,17 @@ Output----
 terraform init
 
 # Create Plan 
+# here after -out=file name.Here file name is v1plan.out
+# Here we will not be able to read the file as it will be in the binary format.
 terraform plan -out=v1plan.out
 
 # Read the plan 
+# Here we will be able to read the file.
+# v1plan.out is the file name
 terraform show v1plan.out
 
 # Read the plan in json format
+# v1plan.out is the file name
 terraform show -json v1plan.out
 
 #Terraform Show command to Read State files
@@ -48,3 +53,4 @@ terraform apply -auto-approve
 # Terraform Show 
 terraform show
 Observation: It should display the state file
+------------------------------------------------------------------------------------------------------------------------------------------------------------

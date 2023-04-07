@@ -13,14 +13,163 @@ Now Create Folder inside the bucket
 Folder Name: dev
 Click on Create Folder
 
-#Terraform Backend Configuration-#Terraform Backend as S3
+#Apache-install.sh
+#! /bin/bash
+sudo yum update -y
+sudo yum install -y httpd
+sudo systemctl enable httpd
+sudo service httpd start  
+echo "<h1>Welcome to StackSimplify ! AWS Infra created using Terraform in us-east-1 Region</h1>" | sudo tee /var/www/html/index.html
+
+#Terraform Backend Configuration(Terraform Backend as S3)
 #Add the below listed Terraform backend block in Terrafrom Settings block in main.tf
-# Terraform Backend Block
+
+# Terraform Block
+terraform {
+  required_version = ">= 1.4" 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+  # Adding Backend as S3 for Remote State Storage
   backend "s3" {
     bucket = "terraform-stacksimplify"
     key    = "dev/terraform.tfstate"
-    region = "us-east-1"    
+    region = "us-east-1" 
+/*
+    # Enable during Step-09     
+    # For State Locking
+    dynamodb_table = "terraform-dev-state-table"    
+*/    
   }
+}
+
+# Provider Block
+provider "aws" {
+  region  = var.aws_region
+  profile = "default"
+}
+/*
+Note-1:  AWS Credentials Profile (profile = "default") configured on your local desktop terminal  
+$HOME/.aws/credentials
+*/
+
+#Variable block- Input Variables
+variable "aws_region" {
+  description = "Region in which AWS Resources to be created"
+  type = string
+  default = "us-east-1"
+}
+
+variable "instance_type" {
+  description = "EC2 Instance Type - Instance Sizing"
+  type = string
+  #default = "t2.micro"
+  default = "t2.small"
+}
+
+# Resource Block-
+# Create Security Group - SSH Traffic
+resource "aws_security_group" "vpc-ssh" {
+  name        = "vpc-ssh"
+  description = "Dev VPC SSH"
+  ingress {
+    description = "Allow Port 22"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    description = "Allow all ip and ports outboun"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Create Security Group - Web Traffic
+resource "aws_security_group" "vpc-web" {
+  name        = "vpc-web"
+  description = "Dev VPC web"
+  ingress {
+    description = "Allow Port 80"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow Port 443"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow all ip and ports outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+}
+
+# Create EC2 Instance - Amazon Linux
+resource "aws_instance" "my-ec2-vm" {
+  ami           = data.aws_ami.amzlinux.id 
+  instance_type = var.instance_type
+  key_name      = "terraform-key"
+	user_data = file("apache-install.sh")  
+  vpc_security_group_ids = [aws_security_group.vpc-ssh.id, aws_security_group.vpc-web.id]
+  tags = {
+    "Name" = "amz-linux-vm"
+  }
+}
+
+# Define Output Values
+# Attribute Reference
+output "ec2_instance_publicip" {
+  description = "EC2 Instance Public IP"
+  value = aws_instance.my-ec2-vm.public_ip
+}
+
+# Attribute Reference - Create Public DNS URL 
+output "ec2_publicdns" {
+  description = "Public DNS URL of an EC2 Instance"
+  value = aws_instance.my-ec2-vm.public_dns
+}
+
+# Datasources Block
+# Get latest AMI ID for Amazon Linux2 OS
+data "aws_ami" "amzlinux" {
+  most_recent = true
+  owners = [ "amazon" ]
+  filter {
+    name = "name"
+    values = [ "amzn2-ami-hvm-*-gp2" ]
+  }
+  filter {
+    name = "root-device-type"
+    values = [ "ebs" ]
+  }
+  filter {
+    name = "virtualization-type"
+    values = [ "hvm" ]
+  }
+  filter {
+    name = "architecture"
+    values = [ "x86_64" ]
+  }
+}
+
+
 
 Step-04: Test with Remote State Storage Backend
 # Initialize Terraform

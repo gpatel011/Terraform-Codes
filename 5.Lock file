@@ -38,3 +38,45 @@ provider "registry.terraform.io/hashicorp/random" {
     "zh:fbdd0684e62563d3ac33425b0ac9439d543a3942465f4b26582bcfabcb149515",
   ]
 }
+
+# Terraform Settings Block
+terraform {
+  # Terraform Version
+  required_version = ">= 1.4.1"
+  required_providers {
+    # AWS Provider 
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 2.0.0"
+    }
+    # Random Provider
+    random = {
+      source  = "hashicorp/random"
+      version = "3.0.0"
+    }
+  }
+}
+
+# Provider Block
+provider "aws" {
+  region = "us-east-1"
+  profile = "default" # Defining it for default profile is Optional
+}
+
+# Resource Block: Create Random Pet Name 
+# Here we are definig the format of the name of the bucket.After doing the "terraform plan" command it creates a bucket with any random name with the 
+length 5 and there will be "-" seperator in between all the words.
+resource "random_pet" "petname" {
+  length    = 5
+  separator = "-"
+}
+
+# Resource Block: Create AWS S3 Bucket
+resource "aws_s3_bucket" "sample" {
+  bucket = random_pet.petname.id
+  acl    = "public-read"
+  region = "us-east-1"  # Comment this if we are going to use AWS Provider v3.x version
+}
+
+
+

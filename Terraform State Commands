@@ -96,3 +96,93 @@ terraform plan
 # Terraform Apply
 terraform apply -auto-approve
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
+#terraform State command----------
+
+# List Resources from Terraform State
+terraform state list
+
+# Show the attributes of a single resource from Terraform State
+terraform  state show data.aws_ami.amzlinux
+terraform  state show aws_instance.my-ec2-vm
+
+# Terraform State Move Resources to different name
+terraform state mv -dry-run aws_instance.my-ec2-vm aws_instance.my-ec2-vm-new 
+terraform state mv aws_instance.my-ec2-vm aws_instance.my-ec2-vm-new 
+ls -lrta
+
+Observation: 
+1) It should create a backup file of terraform.tfstate as something like this "terraform.tfstate.1611929587.backup"
+1) It renamed the name of "my-ec2-vm" in state file to "my-ec2-vm-new". 
+2) Run terraform plan and observe what happens in next run of terraform plan and apply
+-----------------------------
+# WRONG APPROACH 
+-----------------------------
+# WRONG APPROACH OF MOVING TO TERRAFORM PLAN AND APPLY AFTER ABOVE CHANGE terraform state mv CHANGE
+# WE NEED TO UPDATE EQUIVALENT RESOURCE in terraform manifests to match the same new name. 
+
+# Terraform Plan
+terraform plan
+Observation: It will show "Plan: 1 to add, 0 to change, 1 to destroy."
+1 to add: New EC2 Instance will be added
+1 to destroy: Old EC2 instance will be destroyed
+
+DON'T DO TERRAFORM APPLY because it shows make changes. Nothing changed other than state file local naming of a resource. Ideally nothing on current state (real cloud environment should not change due to this)
+-----------------------------
+
+-----------------------------
+# RIGHT APPROACH
+-----------------------------
+Update "c3-ec2-instance.tf"
+Before: resource "aws_instance" "my-ec2-vm" {
+After: resource "aws_instance" "my-ec2-vm-new" {  
+
+Update all references of this resources in your terraform manifests
+Update c5-outputs.tf
+Before: value = aws_instance.my-ec2-vm.public_ip
+After: value = aws_instance.my-ec2-vm-new.public_ip
+
+Before: value = aws_instance.my-ec2-vm.public_dns
+After: value = aws_instance.my-ec2-vm-new.public_dns
+
+Now run terraform plan and you should see no changes to Infra
+
+# Terraform Plan
+terraform plan
+Observation: 
+1) Message-1: No changes. Infrastructure is up-to-date
+2) Message-2: This means that Terraform did not detect any differences between your
+configuration and real physical resources that exist. As a result, no
+actions need to be performed.
+
+# Remove Resources from Terraform State
+terraform state rm -dry-run aws_instance.my-ec2-vm-new
+terraform state rm aws_instance.my-ec2-vm-new
+Observation: 
+1) Firstly takes backup of current state file before removing (example: terraform.tfstate.1611930284.backup)
+2) Removes it from terraform.tfstate file
+
+# Terraform Plan
+terraform plan
+Observation: It will tell you that resource is not in state file but same is present in your terraform manifests (03-ec2-instace.tf - DESIRED STATE). Do you want to re-create it?
+This will re-create new EC2 instance excluding one created earlier and running
+
+Make a  Choice
+-------------
+Choice-1: You want this resource to be running on cloud but should not be managed by terraform. Then remove its references in terraform manifests(DESIRED STATE). So that the one running in AWS cloud (current infra) this instance will be independent of terraform. 
+Choice-2: You want a new resource to be created without deleting other one (non-terraform managed resource now in current state). Run terraform plan and apply
+LIKE THIS WE NEED TO MAKE DECISIONS ON WHAT WOULD BE OUR OUTCOME OF REMOVING A RESOURCE FROM STATE.
+
+PRIMARY REASON for this is command is that respective resource need to be removed from as terraform managed. 
+
+# Run Terraform Plan
+terraform plan
+
+# Run Terraform Apply
+terraform apply 
+
+
+
+
+
+
+

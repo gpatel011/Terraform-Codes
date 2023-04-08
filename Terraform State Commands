@@ -1,4 +1,6 @@
-#Terraform Show
+#Here use terraform code same as terraform State lab.
+
+#Terraform Show----------
 
 #Update your backend block with your bucket name, key and region,Also update your dynamodb table name.Rest all blocks will be same as terraform State lab.
 # Terraform Block
@@ -54,3 +56,43 @@ terraform apply -auto-approve
 terraform show
 Observation: It should display the state file
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Terraform Refresh-------------
+
+#Add a new tag to EC2 Instance using AWS Management Console
+"demotag" = "refreshtest"
+
+#Execute terraform plan
+You should observe no changes to local state file because plan does the comparison in memory
+Verify S3 Bucket - no update to tfstate file about the change
+
+#Execute terraform refresh
+You should see terraform state file updated with new demo tag
+
+# Review terraform state file
+1) terraform show
+2) Also verify S3 bucket, new version of terraform.tfstate file will be created
+
+#Why you need to the execution in this order (refresh, plan, make a decision, apply) ?
+There are changes happened in your infra manually and not via terraform.
+Now decision to be made if you want those changes or not.
+Choice-1: If you dont want those changes proceed with terraform apply so manual changes we have done on our cloud EC2 Instance will be removed.
+Choice-2: If you want those changes, refer terraform.tfstate file about changes and embed them in your terraform manifests (example: c4-ec2-instance.tf) and proceed with flow (referesh, plan, review execution plan and apply)
+
+#I picked choice-2, so i will update the tags in c4-ec2-instance.tf
+Update in c4-ec2-instance.tf
+  tags = {
+    "Name" = "amz-linux-vm"
+    "demotag" = "refreshtest"
+  }
+
+#Execute the commands to make our manual change official in terraform manifests and tfstate files perspective
+# Terraform Refresh
+terraform refresh
+
+# Terraform Plan
+terraform plan
+
+# Terraform Apply
+terraform apply -auto-approve
+-----------------------------------------------------------------------------------------------------------------------------------------------------------

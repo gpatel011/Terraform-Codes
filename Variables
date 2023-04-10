@@ -25,10 +25,13 @@ $HOME/.aws/credentials
 */
 
 # Input Variables
-#We are going to define below listed variables
+/*
+We are going to define below listed variables
 aws_region is a variable of type string
 ec2_ami_id is a variable of type string
 ec2_instance_count is a variable of type number
+*/
+
 variable "aws_region" {
   description = "Region in which AWS resources to be created"
   type        = string
@@ -118,8 +121,7 @@ resource "aws_instance" "my-ec2-vm" {
 }
 
 
-
-
+#Output---
 # Initialize Terraform
 terraform init
 
@@ -142,10 +144,42 @@ http://<Public-IP-Address>
 terraform destroy -auto-approve
 rm -rf .terraform*
 rm -rf terraform.tfstate*
-Step-02: Input Variables Assign When Prompted
-Reference Sub folder: v2-Input-Variables-Assign-when-prompted
-Add a new variable in variables.tf named ec2_instance_type without any default value.
-As the variable doesn't have any default value when you execute terraform plan or terraform apply it will prompt for the variable.
+
+
+----------2.Input Variables Assign When Prompted--------
+#Refer above code.
+#Add a new variable in variables.tf named ec2_instance_type without any default value.
+#As the variable doesn't have any default value when you execute terraform plan or terraform apply it will prompt/ask for the variable.
+
+#Input Variable Block
+# Assign When Prompted using CLI
+variable "ec2_instance_type" {
+  description = "EC2 Instance Type"
+  type = string
+}
+
+#Resource Block
+# Create EC2 Instance
+resource "aws_instance" "my-ec2-vm" {
+  ami                    = var.ec2_ami_id
+  instance_type          = var.ec2_instance_type
+  key_name               = "terraform-key"
+  count                  = var.ec2_instance_count
+  user_data              = <<-EOF
+    #!/bin/bash
+    sudo yum update -y
+    sudo yum install httpd -y
+    sudo systemctl enable httpd
+    sudo systemctl start httpd
+    echo "<h1>Welcome to StackSimplify ! AWS Infra created using Terraform in us-east-1 Region</h1>" > /var/www/html/index.html
+    EOF
+  vpc_security_group_ids = [aws_security_group.vpc-ssh.id, aws_security_group.vpc-web.id]
+  tags = {
+    "Name" = "myec2vm"
+  }
+}
+
+#Output
 # Initialize Terraform
 terraform init
 
@@ -157,9 +191,48 @@ terraform fmt
 
 # Review the terraform plan
 terraform plan
-Step-03: Input Variables Override default value with cli argument -var
-Reference Sub folder: v3-Input-Variables-Override-default-with-cli
+Here it will ask for the ec2_instance_type value 
+
+#terraform apply
+
+-----------3: Input Variables Override default value with cli argument -var------------
+
 We are going to override the default values defined in variables.tf by providing new values using the -var argument using CLI
+
+#Input Variables
+variable "ec2_instance_count" {
+  description = "EC2 Instance Count"
+  type        = number
+  default     = 2
+}
+
+variable "ec2_instance_type" {
+  description = "EC2 Instance Type"
+  type = string
+  default = "t3.micro"
+}
+
+# Create EC2 Instance
+resource "aws_instance" "my-ec2-vm" {
+  ami                    = var.ec2_ami_id
+  instance_type          = var.ec2_instance_type
+  key_name               = "terraform-key"
+  count                  = var.ec2_instance_count
+  user_data              = <<-EOF
+    #!/bin/bash
+    sudo yum update -y
+    sudo yum install httpd -y
+    sudo systemctl enable httpd
+    sudo systemctl start httpd
+    echo "<h1>Welcome to StackSimplify ! AWS Infra created using Terraform in us-east-1 Region</h1>" > /var/www/html/index.html
+    EOF
+  vpc_security_group_ids = [aws_security_group.vpc-ssh.id, aws_security_group.vpc-web.id]
+  tags = {
+    "Name" = "myec2vm"
+  }
+}
+
+#Output----
 # Initialize Terraform
 terraform init
 
@@ -182,9 +255,12 @@ terraform plan -var="ec2_instance_type=t3.large" -var="ec2_instance_count=1" -ou
 
 # Create / Deploy Terraform Resources using Plan file
 terraform apply v3out.plan 
-Step-04: Input Variables Override with Environment Variables
-Reference Sub folder: v4-Input-Variables-Override-with-Environment-Variables
-Set environment variables and execute terraform plan to see if it overrides default values
+
+---------4.Input Variables Override with Environment Variables------------
+
+#This is for extra security.We can use for password purpose
+#Set environment variables and execute terraform plan to see if it overrides default values
+
 # Sample
 export TF_VAR_variable_name=value
 
@@ -209,10 +285,17 @@ terraform plan
 unset TF_VAR_ec2_instance_count
 unset TF_VAR_ec2_instance_type
 echo $TF_VAR_ec2_instance_count, $TF_VAR_ec2_instance_type
-Step-05: Assign Input Variables from terraform.tfvars
-Reference Sub folder: v5-Input-Variables-Assign-with-terraform-tfvars
-Create a file named terraform.tfvars and define variables
-If the file name is terraform.tfvars, terraform will auto-load the variables present in this file by overriding the default values in variables.tf
+
+-------5: Assign Input Variables from terraform.tfvars-----------
+
+#Create a file named terraform.tfvars and define variables
+#If the file name is terraform.tfvars, terraform will auto-load the variables present in this file by overriding the default values in variables.tf
+#Lets check this with ec2_instance_type, ec2_instance_count
+
+#terraform.tfvars
+ec2_instance_count = 1
+ec2_instance_type  = "t3.small"
+
 # Initialize Terraform
 terraform init
 
@@ -224,20 +307,23 @@ terraform fmt
 
 # Review the terraform plan
 terraform plan
+Here we need t o enter the value.
 
 # Create Resources
 terraform apply
 
 # Access Application
 http://<Elastic-IP-Address>
-Step-06: Assign Input Variables with -var-file argument
-Reference Sub folder: v6-Input-Variables-Assign-with-tfvars-var-file
+
+----------6: Assign Input Variables with -var-file argument-----------
+
 If we plan to use different names for .tfvars files, then we need to explicitly provide the argument -var-file during the terraform plan or apply
 We will use following things in this example
 c2-variables.tf: aws_region variable will be picked with default value
 terraform.tfvars: ec2_instance_count variable will be picked from this file
 web.tfvars: ec2_instance_type variable will be picked from this file
 app.tfvars: ec2_instance_type variable will be picked from this file
+
 # Initialize Terraform
 terraform init
 

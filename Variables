@@ -319,10 +319,17 @@ http://<Elastic-IP-Address>
 
 If we plan to use different names for .tfvars files, then we need to explicitly provide the argument -var-file during the terraform plan or apply
 We will use following things in this example
-c2-variables.tf: aws_region variable will be picked with default value
+
+#aws_region variable will be picked with default value from variable.tf file
+
 terraform.tfvars: ec2_instance_count variable will be picked from this file
+ec2_instance_count = 1
+
 web.tfvars: ec2_instance_type variable will be picked from this file
+ec2_instance_type  = "t3.large"
+
 app.tfvars: ec2_instance_type variable will be picked from this file
+ec2_instance_type  = "t3.xlarge"
 
 # Initialize Terraform
 terraform init
@@ -336,7 +343,8 @@ terraform fmt
 # Review the terraform plan
 terraform plan -var-file="web.tfvars"
 terraform plan -var-file="app.tfvars"
-Step-07: Auto load input variables with .auto.tfvars files
+
+--------------7: Auto load input variables with .auto.tfvars files--------------------
 Reference Sub folder: v7-Input-Variables-Assign-with-auto-tfvars
 We will create a file with extension as .auto.tfvars.
 With this extension, whatever may be the file name, the variables inside these files will be auto loaded during terraform plan or apply
@@ -351,7 +359,8 @@ terraform fmt
 
 # Review the terraform plan
 terraform plan 
-Step-08: Implement complex type cosntructors like list and maps
+
+-----------------8: Implement complex type cosntructors like list and maps-------------
 Reference Sub folder: v8-Input-Variables-Lists-Maps
 Type Constraints
 Step-08-01: Implement Vairable Type as List
